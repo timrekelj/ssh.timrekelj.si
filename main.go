@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 	"log"
 	"os"
 	"os/signal"
@@ -9,17 +10,37 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	bm "github.com/charmbracelet/wish/bubbletea"
 )
 
-type model struct{}
+type model struct {
+	width  int
+	height int
+	dots   int
+}
 
-func (m model) Init() tea.Cmd { return nil }
+type tickMsg time.Time
+func tick() tea.Cmd {
+    return tea.Tick(250*time.Millisecond, func(t time.Time) tea.Msg {
+        return tickMsg(t)
+    })
+}
+
+func (m model) Init() tea.Cmd {
+	return tick()
+}
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tickMsg:
+		m.dots = (m.dots + 1) % 4
+		return m, tick()
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
@@ -30,7 +51,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return "Hello, World!\n\nPress q to quit.\n"
+	if m.width == 0 {
+		return ""
+	}
+
+	text := "Work in progress" + strings.Repeat(".", m.dots) + strings.Repeat(" ", 3-m.dots)
+	text += "\n\nTim Rekelj   "
+
+	return lipgloss.Place(
+		m.width, m.height,
+		lipgloss.Center, lipgloss.Center,
+		text,
+	)
 }
 
 func main() {
