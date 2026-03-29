@@ -1,0 +1,10 @@
+services:
+  ssh-portfolio:
+    build: .
+    restart: always
+    ports:
+      - "22:2222"
+    volumes:
+      - ssh_keys:/root/.ssh
+volumes:
+  ssh_keys:
